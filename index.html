@@ -94,12 +94,28 @@ form.addEventListener('submit',async (e)=>{
   try{
     const res = await fetch(GAS_WEBAPP_URL+"?"+params.toString());
     const result = await res.json();
-    if(result.status==="ok"){
-      showMsg("保存しました","ok");
-      submitBtn.textContent="保存しました";
-      submitBtn.disabled=true;
-      setTimeout(()=>{if(liff.isInClient()) liff.closeWindow();},3000);
-    }else throw new Error(result.message||"保存に失敗");
+   if(result.status==="ok"){
+  showMsg("保存しました","ok");
+  submitBtn.textContent="保存しました";
+  submitBtn.disabled=true;
+
+  // LINEに登録完了メッセージ送信
+  if(liff.isInClient() && liff.sendMessages){
+    liff.sendMessages([{
+      type: 'text',
+      text: '登録完了しました！よろしくお願いします。'
+    }]).then(()=>{
+      console.log("メッセージ送信成功");
+      // 3秒後にウィンドウを閉じる
+      setTimeout(()=>{ liff.closeWindow(); },3000);
+    }).catch(err=>{
+      console.error("メッセージ送信失敗:", err);
+      setTimeout(()=>{ liff.closeWindow(); },3000);
+    });
+  } else {
+    setTimeout(()=>{ if(liff.isInClient()) liff.closeWindow(); },3000);
+  }
+}else throw new Error(result.message||"保存に失敗");
   }catch(err){
     console.error(err);
     showMsg("保存に失敗しました: "+err.message,"error");

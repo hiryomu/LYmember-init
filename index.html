@@ -208,39 +208,43 @@
         return;
       }
 
-      try {
-        // GAS Web Appsは通常GETリクエストを使用します
-        // パラメータをクエリ文字列として追加
-        const params = new URLSearchParams();
-        Object.keys(payload).forEach(key => {
-          params.append(key, payload[key]);
-        });
-        
-        const response = await fetch(`${GAS_WEBAPP_URL}?${params.toString()}`, {
-          method: 'GET'
-        });
-        
-        if (response.ok) {
-          showMsg('保存しました！', 'ok');
-          submitBtn.textContent = '保存しました';
-          submitBtn.disabled = true;
-          
-          // 3秒後にLIFFウィンドウを閉じる
-          setTimeout(() => {
-            if (liff.isInClient()) {
-              liff.closeWindow();
-            }
-          }, 3000);
-        } else {
-          throw new Error(`サーバーエラー: ${response.status}`);
-        }
-      } catch (err) {
-        console.error('保存エラー:', err);
-        showMsg(`保存に失敗しました: ${err.message}`, 'err');
-        submitBtn.textContent = '保存する';
-        setLoadingState(false);
+// 変更後の送信処理
+try {
+  // GAS Web Appsは通常GETリクエストを使用します
+  // パラメータをクエリ文字列として追加
+  const params = new URLSearchParams();
+  params.append('mode', 'initdata');
+  params.append('liffUserId', userIdInput.value);
+  params.append('nickname', nicknameInput.value.trim());
+  params.append('level', levelInput.value);
+  params.append('displayName', displayNameInput.value);
+  
+  const response = await fetch(`${GAS_WEBAPP_URL}?${params.toString()}`, {
+    method: 'GET'
+  });
+  
+  const result = await response.json();
+  
+  if (result.status === 'success') {
+    showMsg('保存しました！', 'ok');
+    submitBtn.textContent = '保存しました';
+    submitBtn.disabled = true;
+    
+    // 3秒後にLIFFウィンドウを閉じる
+    setTimeout(() => {
+      if (liff.isInClient()) {
+        liff.closeWindow();
       }
-    });
+    }, 3000);
+  } else {
+    throw new Error(result.message || '保存に失敗しました');
+  }
+} catch (err) {
+  console.error('保存エラー:', err);
+  showMsg(`保存に失敗しました: ${err.message}`, 'err');
+  submitBtn.textContent = '保存する';
+  setLoadingState(false);
+}
 
     async function initLiff() {
       try {

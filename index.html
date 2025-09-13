@@ -153,7 +153,7 @@
   <script>
     // --- 設定（ここをあなたの値に置き換えてください） ---
     const LIFF_ID = "2008101239-krV9EGla"; // LIFF ID
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec?mode=initdata"; // GAS Web Apps の URL (クエリパラメータを削除)
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec?mode=initdata&"; // GAS Web Apps の URL (クエリパラメータを削除)
     // -----------------------------------------------------
 
     const form = document.getElementById('profileForm');
@@ -209,7 +209,6 @@
       }
 
       try {
-        // GAS Web Appsは通常GETリクエストを使用します
         // パラメータをクエリ文字列として追加
         const params = new URLSearchParams();
         Object.keys(payload).forEach(key => {

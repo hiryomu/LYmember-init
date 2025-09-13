@@ -156,14 +156,11 @@
       }
 
       try {
-        const response = await fetch(GAS_WEBAPP_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+const response = await fetch(GAS_WEBAPP_URL, {
+  method: 'POST', // ここ重要
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
         showMsg('保存しました！', 'ok');
         submitBtn.textContent = '保存しました';
       } catch (err) {

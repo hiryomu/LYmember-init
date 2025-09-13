@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>初期設定</title>
+  <!-- LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+      padding: 16px;
+      background: #f7f7fb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+      max-width: 520px;
+      width: 90%;
+      margin: 20px auto;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+      color: #444;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 24px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    .muted {
+      color: #666;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .success {
+      color: #28a745;
+      margin-top: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .error {
+      color: #dc3545;
+      margin-top: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>初期設定</h2>
+    <form id="profileForm">
+      <label for="nickname">ニックネーム</label>
+      <input id="nickname" name="nickname" type="text" placeholder="例: たろう" required />
+      <label for="level">レベル</label>
+      <select id="level" name="level" required>
+        <option value="">選んでください</option>
+        <option value="5級">5級</option>
+        <option value="4級">4級</option>
+        <option value="3級">3級</option>
+        <option value="準2級">準2級</option>
+        <option value="2級">2級</option>
+        <option value="準1級">準1級</option>
+        <option value="1級">1級</option>
+      </select>
+      <input type="hidden" id="userId" name="userId" />
+      <input type="hidden" id="displayName" name="displayName" />
+      <button type="submit" id="submitBtn">保存する</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+  <script>
+    // --- 設定（ここをあなたの値に置き換えてください） ---
+    const LIFF_ID = "2008101239-krV9EGla"; // LIFF ID
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec?initdata"; // GAS Web Apps の URL
+    // -----------------------------------------------------
+
+    const form = document.getElementById('profileForm');
+    const msgEl = document.getElementById('msg');
+    const nicknameInput = document.getElementById('nickname');
+    const levelInput = document.getElementById('level');
+    const userIdInput = document.getElementById('userId');
+    const displayNameInput = document.getElementById('displayName');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function showMsg(text, kind) {
+      msgEl.textContent = text;
+      msgEl.className = kind === 'ok' ? 'success' : (kind === 'err' ? 'error' : '');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showMsg('', '');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+
+      const payload = {
+        nickname: nicknameInput.value.trim(),
+        level: levelInput.value,
+        liffUserId: userIdInput.value,
+        displayName: displayNameInput.value
+      };
+
+      if (!payload.nickname) {
+        showMsg('ニックネームを入力してください。', 'err');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '保存する';
+        return;
+      }
+      if (!payload.level) {
+        showMsg('レベルを選択してください。', 'err');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '保存する';
+        return;
+      }
+
+      try {
+        const response = await fetch(GAS_WEBAPP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        showMsg('保存しました！', 'ok');
+        submitBtn.textContent = '保存しました';
+      } catch (err) {
+        console.error(err);
+        showMsg('保存に失敗しました。', 'err');
+        submitBtn.textContent = '保存する';
+        submitBtn.disabled = false;
+      }
+    });
+
+    async function initLiff() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+        const profile = await liff.getProfile();
+        userIdInput.value = profile.userId;
+        displayNameInput.value = profile.displayName;
+        console.log("ユーザーID:", profile.userId);
+        console.log("表示名:", profile.displayName);
+      } catch (err) {
+        console.error("LIFF 初期化エラー:", err);
+        showMsg("LIFFの初期化に失敗しました。", "err");
+      }
+    }
+
+    // ページロード時に実行
+    window.addEventListener('load', () => {
+      initLiff();
+    });
+  </script>
+</body>
+</html>

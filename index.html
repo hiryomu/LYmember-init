@@ -26,6 +26,11 @@
       max-width: 520px;
       width: 90%;
       margin: 20px auto;
+      transition: all 0.3s ease;
+    }
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
     }
     h2 {
       text-align: center;
@@ -60,6 +65,7 @@
       cursor: pointer;
       transition: background 0.2s;
       margin-top: 24px;
+      position: relative;
     }
     button:hover {
       background: #0056b3;
@@ -67,6 +73,25 @@
     button:disabled {
       background: #cccccc;
       cursor: not-allowed;
+    }
+    .button-loading {
+      color: transparent;
+    }
+    .button-loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin: -10px 0 0 -10px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     .muted {
       color: #666;
@@ -78,17 +103,32 @@
       margin-top: 16px;
       font-weight: 700;
       text-align: center;
+      padding: 12px;
+      background-color: rgba(40, 167, 69, 0.1);
+      border-radius: 8px;
     }
     .error {
       color: #dc3545;
       margin-top: 16px;
       font-weight: 700;
       text-align: center;
+      padding: 12px;
+      background-color: rgba(220, 53, 69, 0.1);
+      border-radius: 8px;
+    }
+    .info {
+      color: #17a2b8;
+      margin-top: 16px;
+      font-weight: 500;
+      text-align: center;
+      padding: 12px;
+      background-color: rgba(23, 162, 184, 0.1);
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="card" id="card">
     <h2>初期設定</h2>
     <form id="profileForm">
       <label for="nickname">ニックネーム</label>
@@ -113,7 +153,7 @@
   <script>
     // --- 設定（ここをあなたの値に置き換えてください） ---
     const LIFF_ID = "2008101239-krV9EGla"; // LIFF ID
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec?initdata"; // GAS Web Apps の URL
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec"; // GAS Web Apps の URL (クエリパラメータを削除)
     // -----------------------------------------------------
 
     const form = document.getElementById('profileForm');
@@ -123,17 +163,31 @@
     const userIdInput = document.getElementById('userId');
     const displayNameInput = document.getElementById('displayName');
     const submitBtn = document.getElementById('submitBtn');
+    const card = document.getElementById('card');
 
     function showMsg(text, kind) {
       msgEl.textContent = text;
-      msgEl.className = kind === 'ok' ? 'success' : (kind === 'err' ? 'error' : '');
+      msgEl.className = kind === 'ok' ? 'success' : 
+                         kind === 'err' ? 'error' : 
+                         kind === 'info' ? 'info' : '';
+    }
+
+    function setLoadingState(isLoading) {
+      if (isLoading) {
+        card.classList.add('loading');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('button-loading');
+      } else {
+        card.classList.remove('loading');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('button-loading');
+      }
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showMsg('', '');
-      submitBtn.disabled = true;
-      submitBtn.textContent = '送信中...';
+      setLoadingState(true);
 
       const payload = {
         nickname: nicknameInput.value.trim(),
@@ -142,50 +196,78 @@
         displayName: displayNameInput.value
       };
 
+      // バリデーション
       if (!payload.nickname) {
         showMsg('ニックネームを入力してください。', 'err');
-        submitBtn.disabled = false;
-        submitBtn.textContent = '保存する';
+        setLoadingState(false);
         return;
       }
       if (!payload.level) {
         showMsg('レベルを選択してください。', 'err');
-        submitBtn.disabled = false;
-        submitBtn.textContent = '保存する';
+        setLoadingState(false);
         return;
       }
 
       try {
-const response = await fetch(GAS_WEBAPP_URL, {
-  method: 'POST', // ここ重要
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload)
-});
-        showMsg('保存しました！', 'ok');
-        submitBtn.textContent = '保存しました';
+        // GAS Web Appsは通常GETリクエストを使用します
+        // パラメータをクエリ文字列として追加
+        const params = new URLSearchParams();
+        Object.keys(payload).forEach(key => {
+          params.append(key, payload[key]);
+        });
+        
+        const response = await fetch(`${GAS_WEBAPP_URL}?${params.toString()}`, {
+          method: 'GET'
+        });
+        
+        if (response.ok) {
+          showMsg('保存しました！', 'ok');
+          submitBtn.textContent = '保存しました';
+          submitBtn.disabled = true;
+          
+          // 3秒後にLIFFウィンドウを閉じる
+          setTimeout(() => {
+            if (liff.isInClient()) {
+              liff.closeWindow();
+            }
+          }, 3000);
+        } else {
+          throw new Error(`サーバーエラー: ${response.status}`);
+        }
       } catch (err) {
-        console.error(err);
-        showMsg('保存に失敗しました。', 'err');
+        console.error('保存エラー:', err);
+        showMsg(`保存に失敗しました: ${err.message}`, 'err');
         submitBtn.textContent = '保存する';
-        submitBtn.disabled = false;
+        setLoadingState(false);
       }
     });
 
     async function initLiff() {
       try {
+        setLoadingState(true);
+        showMsg('LIFFを初期化中...', 'info');
+        
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
+        
         const profile = await liff.getProfile();
         userIdInput.value = profile.userId;
         displayNameInput.value = profile.displayName;
+        
+        // デバッグ用
         console.log("ユーザーID:", profile.userId);
         console.log("表示名:", profile.displayName);
+        
+        setLoadingState(false);
+        showMsg('プロフィール情報を取得しました。設定を完了してください。', 'info');
+        
       } catch (err) {
         console.error("LIFF 初期化エラー:", err);
-        showMsg("LIFFの初期化に失敗しました。", "err");
+        showMsg(`LIFFの初期化に失敗しました: ${err.message}`, "err");
+        setLoadingState(false);
       }
     }
 

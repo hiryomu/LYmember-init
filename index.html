@@ -245,7 +245,6 @@
     async function initLiff() {
       try {
         setLoadingState(true);
-        showMsg('LIFFを初期化中...', 'info');
         
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {

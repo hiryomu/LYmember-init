@@ -153,7 +153,7 @@
   <script>
     // --- 設定（ここをあなたの値に置き換えてください） ---
     const LIFF_ID = "2008101239-krV9EGla"; // LIFF ID
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec"; // GAS Web Apps の URL (クエリパラメータを削除)
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFgPReTnR7A20Yv6gX6o1QBa1fQ4-EZHp-bYYdzzYNTyKx72JsSqwbKlOgP_Hc6oNDmA/exec?mode=initdata"; // GAS Web Apps の URL (クエリパラメータを削除)
     // -----------------------------------------------------
 
     const form = document.getElementById('profileForm');
@@ -262,11 +262,9 @@
         console.log("表示名:", profile.displayName);
         
         setLoadingState(false);
-        showMsg('プロフィール情報を取得しました。設定を完了してください。', 'info');
         
       } catch (err) {
         console.error("LIFF 初期化エラー:", err);
-        showMsg(`LIFFの初期化に失敗しました: ${err.message}`, "err");
         setLoadingState(false);
       }
     }
